@@ -7,11 +7,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root{--bg:#1e1f25;--card:#2a2c33;--accent:#4caf50;--muted:#9aa0a6}
-  body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;background:var(--bg);color:#eef;}
+  body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;background:var(--bg);color:#eef}
   .container{max-width:1100px;margin:18px auto;padding:12px}
   header{text-align:center;margin-bottom:16px}
   header h1{color:var(--accent);margin:0;font-size:28px}
-  .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.5);}
+  .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
   form .row{display:flex;gap:10px;align-items:center}
   input,select{padding:10px;border-radius:8px;border:1px solid #3a3b41;background:#161619;color:#fff}
   input::placeholder{color:#888}
@@ -195,8 +195,7 @@ function baixarCSV(){
   if(clients.length===0){ alert('Sem dados para exportar'); return; }
   const rows = [['Nome','Telefone','CortesFeitos','CortesMes','Valor','Pago']];
   clients.forEach(c=> rows.push([c.nome,c.telefone,c.cortesFeitos,c.cortesMes,c.valor,c.pago]));
-  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('
-');
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='barber_clients.csv'; a.click(); URL.revokeObjectURL(url);
 }
@@ -207,8 +206,7 @@ function carregarMeses(){ const sel=document.getElementById('selMes'); sel.inner
 
 function mostrarHistorico(){ const key=document.getElementById('selMes').value; const area=document.getElementById('histArea'); area.innerHTML=''; if(!key) return alert('Selecione um mês'); const h=history[key]; if(!h) return area.innerText='Histórico não encontrado'; let html=`<div style="margin-bottom:8px"><b>Mês:</b> ${key}</div>`; html += '<table><thead><tr><th>Nome</th><th>CortesFeitos</th><th>CortesMes</th><th>Valor</th><th>Pago</th></tr></thead><tbody>'; h.snapshot.forEach(r=> html+=`<tr><td>${r.nome}</td><td>${r.cortesFeitos}</td><td>${r.cortesMes}</td><td>${formatCurrency(r.valor)}</td><td>${r.pago}</td></tr>`); html += '</tbody></table>'; area.innerHTML=html; }
 
-function downloadHistoricoCSV(){ const key=document.getElementById('selMes').value; if(!key) return alert('Selecione um mês'); const h=history[key]; if(!h) return alert('Histórico não encontrado'); const rows=[['Nome','CortesFeitos','CortesMes','Valor','Pago']]; h.snapshot.forEach(r=> rows.push([r.nome,r.cortesFeitos,r.cortesMes,r.valor,r.pago])); const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('
-'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`barber_history_${key}.csv`; a.click(); URL.revokeObjectURL(url); }
+function downloadHistoricoCSV(){ const key=document.getElementById('selMes').value; if(!key) return alert('Selecione um mês'); const h=history[key]; if(!h) return alert('Histórico não encontrado'); const rows=[['Nome','CortesFeitos','CortesMes','Valor','Pago']]; h.snapshot.forEach(r=> rows.push([r.nome,r.cortesFeitos,r.cortesMes,r.valor,r.pago])); const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`barber_history_${key}.csv`; a.click(); URL.revokeObjectURL(url); }
 
 function limparHistorico(){ if(!confirm('Apagar todo o histórico?')) return; history={}; salvarHist(); carregarMeses(); document.getElementById('histArea').innerHTML=''; alert('Histórico limpo'); }
 
