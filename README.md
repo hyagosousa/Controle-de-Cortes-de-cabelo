@@ -33,6 +33,15 @@
   button:hover{opacity:.85;transform:scale(1.02);} 
   .actions button{margin-bottom:4px;}
   .icon{font-size:16px;}
+  /* --- LAYOUT PREMIUM PROFISSIONAL --- */
+  body{background:#1e1f25;color:#f2f2f2;font-family:'Segoe UI',sans-serif;}
+  .card{background:#2a2c33;border-radius:14px;padding:18px;box-shadow:0 0 10px #0005;border-left:6px solid #4caf50;}
+  header h1{text-align:center;font-size:28px;font-weight:700;margin-bottom:10px;color:#4caf50;}
+  table{width:100%;border-collapse:collapse;margin-top:15px;background:#2a2c33;border-radius:10px;overflow:hidden;}
+  th,td{padding:12px;text-align:left;border-bottom:1px solid #3a3c44;}
+  th{background:#333542;color:#4caf50;font-weight:700;}
+  button{background:#4caf50;border:none;color:white;font-weight:600;padding:10px 16px;border-radius:8px;cursor:pointer;}
+  button:hover{opacity:.9;}
 </style>
 </head>
 <body>
@@ -48,11 +57,11 @@
       <div class="row">
         <input id="nome" placeholder="Nome do cliente" required />
         <input id="telefone" placeholder="Telefone (WhatsApp) - opcional" />
-        <input id="cortesMes" type="number" min="1" value="2" style="width:110px" />
-        <input id="valor" type="number" min="0" value="80" style="width:120px" />
+        <input id="cortesMes" type="number" min="1" value="2" style="width:110px" placeholder="Cortes/mês" />
+        <input id="valor" type="number" min="0" value="80" style="width:120px" placeholder="Valor do plano (R$)" />
         <button type="submit">Adicionar</button>
       </div>
-      <div class="small">Caso queira enviar cobrança pelo WhatsApp, preencha o telefone no formato internacional (ex: 5511999998888)</div>
+      <div class="small">Preencha o telefone no formato internacional (ex: 5511999998888)</div>
     </form>
   </div>
 
@@ -107,22 +116,55 @@ function formatCurrency(v){ return 'R$ ' + Number(v).toFixed(2).replace('.',',')
 
 function addCliente() {
   const nome = document.getElementById('nome').value.trim();
-  const telefone = document.getElementById('telefone') ? document.getElementById('telefone').value.trim() : '';
+  const telefone = document.getElementById('telefone').value.trim();
+  const cortesMes = Number(document.getElementById('cortesMes').value)||2;
+  const valor = Number(document.getElementById('valor').value)||0;
   if (!nome) return alert('Digite um nome');
 
-  clients.push({
-    nome,
-    telefone,
-    cortesFeitos: 0,
-    cortesMes: 2,
-    valor: 80,
-    pago: false
-  });
+  clients.push({ nome, telefone, cortesFeitos: 0, cortesMes, valor, pago: false });
 
   salvar();
-  if(document.getElementById('nome')) document.getElementById('nome').value = '';
-  if(document.getElementById('telefone')) document.getElementById('telefone').value = '';
-  render();
+  document.getElementById('nome').value = '';
+  document.getElementById('telefone').value = '';
+  renderTable
+
+// --- HISTÓRICO MENSAL AUTOMÁTICO ---
+let historico = JSON.parse(localStorage.getItem('historicoBarber')) || [];
+
+function fecharMes(){
+  const resumo = clients.map(c => ({
+    nome: c.nome,
+    cortes: c.cortesFeitos,
+    valorRecebido: c.pago ? c.valor : 0
+  }));
+
+  const mes = new Date().toLocaleString('pt-BR',{month:'long',year:'numeric'});
+
+  historico.push({mes, dados: resumo});
+  localStorage.setItem('historicoBarber', JSON.stringify(historico));
+
+  clients = clients.map(c => ({...c,cortesFeitos:0,pago:false}));
+  salvar();
+  renderTable(); atualizarChart();
+}
+
+function mostrarHistorico(){
+  let texto = 'HISTÓRICO MENSAL:
+
+';
+  historico.forEach(h => {
+    texto += `📅 ${h.mes}
+`;
+    h.dados.forEach(d => {
+      texto += ` - ${d.nome}: ${d.cortes} cortes | R$ ${d.valorRecebido}
+`;
+    });
+    texto += '
+';
+  });
+  alert(texto);
+}(); atualizarChart();
+}
 }
 
 function cortar(i){
@@ -333,4 +375,5 @@ init();
 </script>
 </body>
 </html>
+
 
