@@ -1,4 +1,3 @@
-# Controle-de-Cortes-de-cabelo
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -106,16 +105,74 @@ function salvarHist(){ localStorage.setItem(KEY_HISTORY, JSON.stringify(history)
 
 function formatCurrency(v){ return 'R$ ' + Number(v).toFixed(2).replace('.',','); }
 
-function addCliente(){
+function addCliente() {
   const nome = document.getElementById('nome').value.trim();
-  const telefone = document.getElementById('telefone').value.trim();
-  const cortesMes = Number(document.getElementById('cortesMes').value) || 2;
-  const valor = Number(document.getElementById('valor').value) || 80;
-  if(!nome) return alert('Digite o nome');
-  clients.push({ nome, telefone, cortesFeitos:0, cortesMes, valor, pago:false });
+  const telefone = document.getElementById('telefone') ? document.getElementById('telefone').value.trim() : '';
+  if (!nome) return alert('Digite um nome');
+
+  clients.push({
+    nome,
+    telefone,
+    cortesFeitos: 0,
+    cortesMes: 2,
+    valor: 80,
+    pago: false
+  });
+
   salvar();
-  document.getElementById('formCliente').reset();
-  renderTable();
+  if(document.getElementById('nome')) document.getElementById('nome').value = '';
+  if(document.getElementById('telefone')) document.getElementById('telefone').value = '';
+  render();
+}
+
+function cortar(i){
+  const c = clients[i];
+
+  // alerta automático quando faltar 1 corte
+  if(c.cortesFeitos === 0){
+    const chavePIX = 'hyagosousasous@gmail.com';
+    const msg = `Olá ${c.nome},%0A%0A`+
+      `Falta apenas 1 corte para usar todo seu plano.%0A`+
+      `Deseja agendar?`; 
+    if(c.telefone){
+      const phone = c.telefone.replace(/[^0-9]/g,'');
+      const url = `https://web.whatsapp.com/send?phone=${phone}&text=${msg}`;
+      window.open(url,'_blank');
+    }
+  }
+
+  if(c.cortesFeitos >= 2){
+    alert('Renove o plano');
+    return;
+  }
+
+  c.cortesFeitos++;
+  if(c.cortesFeitos >= 2){
+    alert('Renove o plano');
+  }
+  salvar();
+  render();
+}
+
+// botão renovar plano
+function renovarPlano(i){
+  clients[i].cortesFeitos = 0;
+  clients[i].pago = false;
+  salvar();
+  render();
+}(i){
+  const c = clients[i];
+  if(c.cortesFeitos >= 2){
+    alert('Renove o plano');
+    return;
+  }
+  c.cortesFeitos++;
+  if(c.cortesFeitos >= 2){
+    alert('Renove o plano');
+  }
+  salvar();
+  render();
+} renderTable();
   atualizarChart();
 }
 
@@ -276,3 +333,4 @@ init();
 </script>
 </body>
 </html>
+
