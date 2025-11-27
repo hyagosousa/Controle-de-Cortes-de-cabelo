@@ -3,252 +3,229 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Barber Control — Controle de Cortes</title>
+<title>Barber Control — Hyago (Mobile)</title>
+<!-- Chart.js & jsPDF & html2canvas -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  :root{--bg:#1e1f25;--card:#2a2c33;--accent:#4caf50;--muted:#9aa0a6}
-  body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;background:var(--bg);color:#eef}
-  .container{max-width:1100px;margin:18px auto;padding:12px}
-  header{text-align:center;margin-bottom:16px}
-  header h1{color:var(--accent);margin:0;font-size:28px}
-  .card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(0,0,0,0.5)}
-  form .row{display:flex;gap:10px;align-items:center}
-  input,select{padding:10px;border-radius:8px;border:1px solid #3a3b41;background:#161619;color:#fff}
-  input::placeholder{color:#888}
-  button{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
-  button.ghost{background:transparent;border:1px solid #3a3b41}
-  table{width:100%;border-collapse:collapse;margin-top:12px}
-  th,td{padding:10px;border-bottom:1px solid #34343a;text-align:left}
-  th{color:var(--accent);background:#26272b}
-  .small{color:var(--muted);font-size:13px}
-  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#223a2b;color:#cfeed8;font-weight:600}
-  .danger{background:#3a1f1f;color:#ffb3b3;padding:6px 10px;border-radius:8px}
-  .success{background:#123214;color:#bff0c9;padding:6px 10px;border-radius:8px}
-  .actions button{margin-right:6px;margin-bottom:6px}
-  @media(max-width:900px){form .row{flex-direction:column} .container{padding:8px}}
+  :root{--bg:#f3f5f7;--card:#ffffff;--accent:#1f8f49;--muted:#6b7280}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;background:var(--bg);color:#111}
+  .wrap{max-width:900px;margin:0 auto;padding:12px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  h1{font-size:18px;margin:0;color:var(--accent)}
+  .card{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06);margin-bottom:12px}
+  .row{display:flex;gap:8px}
+  input,select,button{font-size:16px}
+  input[type="text"], input[type="number"]{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd}
+  button{padding:10px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid #ddd;color:var(--accent)}
+  .cliente{padding:10px;border-radius:10px;border:1px solid #eee;margin-bottom:8px;display:flex;flex-direction:column}
+  .clienteHead{display:flex;align-items:center;justify-content:space-between}
+  .clienteName{font-weight:700}
+  .small{font-size:13px;color:var(--muted)}
+  .actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .btnRed{background:#e11d48}
+  .progressWrap{height:10px;background:#eee;border-radius:999px;overflow:hidden;margin-top:8px}
+  .progressBar{height:100%;background:var(--accent);width:0%}
+  @media(min-width:800px){ .row{flex-wrap:nowrap} }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="wrap">
   <header>
     <h1>Barber Control — Hyago</h1>
-    <div class="small">Controle clientes, pagamentos, cortes e cobranças (PIX)</div>
+    <div class="small">Mobile friendly</div>
   </header>
 
   <div class="card">
-    <h3>Cadastro de Cliente</h3>
-    <form id="formCliente" onsubmit="event.preventDefault();addCliente()">
-      <div class="row">
-        <input id="nome" placeholder="Nome do cliente" required />
-        <input id="telefone" placeholder="Telefone (WhatsApp) - opcional" />
-        <input id="cortesMes" type="number" min="1" value="2" style="width:120px" placeholder="Cortes/mês" />
-        <input id="valor" type="number" min="0" step="0.01" value="80" style="width:140px" placeholder="Valor do plano (R$)" />
-        <button type="submit">Adicionar</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+      <input id="search" type="text" placeholder="Buscar cliente por nome..." oninput="listarClientes()">
+      <button class="ghost" onclick="mostrarResumo()">Resumo</button>
+    </div>
+
+    <form id="form" onsubmit="event.preventDefault();addCliente()">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="nome" type="text" placeholder="Nome do cliente">
+        <input id="telefone" type="text" placeholder="WhatsApp (somente números)" style="width:180px">
+        <input id="cortes" type="number" placeholder="Cortes/mês" style="width:120px" value="2">
+        <input id="valor" type="number" step="0.01" placeholder="Valor R$" style="width:120px" value="80.00">
       </div>
-      <div class="small" style="margin-top:8px">Telefone: formato internacional ex: 5511999998888 — Valor em reais (ex: 80.00)</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button type="submit">Adicionar</button>
+        <button type="button" class="ghost" onclick="exportarCSV()">Exportar CSV</button>
+        <button type="button" class="ghost" onclick="exportarPDFResumo()">Exportar PDF</button>
+      </div>
+      <div class="small" style="margin-top:8px">Preencha telefone com DDI (ex: 5511999998888). Valor em reais.</div>
     </form>
   </div>
 
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h3 style="margin:0">Clientes</h3>
-      <div style="display:flex;gap:8px">
-        <button onclick="baixarCSV()" class="ghost">Exportar CSV</button>
-        <button onclick="gerarRelatorio()" class="ghost">Relatório</button>
-        <button onclick="fecharMes()" class="ghost">Fechar mês</button>
-        <button onclick="receberMes()" class="ghost">Receber mês</button>
-      </div>
-    </div>
-
-    <div id="tabelaWrap"></div>
-  </div>
+  <div id="lista" class="card"></div>
 
   <div class="card">
-    <h3>Dashboard</h3>
-    <canvas id="chartCuts" height="120"></canvas>
-    <div style="display:flex;gap:12px;margin-top:12px;align-items:center">
-      <div class="pill" id="totais"></div>
-      <div class="small">Gráfico: cortes feitos x restantes</div>
+    <h3 style="margin:0 0 8px 0">Dashboard</h3>
+    <canvas id="chart" height="120"></canvas>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="ghost" onclick="fecharMes()">Fechar mês (salvar histórico)</button>
+      <button class="ghost" onclick="enviarRelatorioWhatsApp()">Enviar relatório (WhatsApp)</button>
+      <button class="ghost btnRed" onclick="limparTudo()">Limpar todos os dados</button>
     </div>
   </div>
 
-  <div class="card">
-    <h3>Histórico Mensal</h3>
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-      <select id="selMes"></select>
-      <button onclick="mostrarHistorico()">Abrir mês</button>
-      <button onclick="downloadHistoricoCSV()">Baixar CSV mês</button>
-      <button onclick="limparHistorico()" class="danger">Limpar histórico</button>
-    </div>
-    <div id="histArea" class="small"></div>
-  </div>
-
-  <footer style="text-align:center;margin-top:14px;color:var(--muted)">Salvo localmente no navegador. Faça backup exportando CSV.</footer>
+  <div id="histArea" class="card" style="display:none"></div>
 </div>
 
 <script>
-// Keys
-const KEY = 'barber_control_clients_v2';
-const KEY_HISTORY = 'barber_control_history_v2';
+// storage keys
+const KEY = 'barber_v3_clients';
+const KEY_HISTORY = 'barber_v3_history';
 
-// State
 let clients = JSON.parse(localStorage.getItem(KEY)) || [];
-let history = JSON.parse(localStorage.getItem(KEY_HISTORY)) || {}; // { '2025-11': { date:'2025-11', snapshot:[...], totals:{}} }
+let history = JSON.parse(localStorage.getItem(KEY_HISTORY)) || {}; // { '2025-11': { date:'2025-11', snapshot:[], totals:{} } }
 
-// Helpers
+// helpers
 function salvar(){ localStorage.setItem(KEY, JSON.stringify(clients)); }
 function salvarHist(){ localStorage.setItem(KEY_HISTORY, JSON.stringify(history)); }
 function formatCurrency(v){ return 'R$ ' + Number(v).toFixed(2).replace('.',','); }
 
-// Add client
+// UI: add client
 function addCliente(){
   const nome = document.getElementById('nome').value.trim();
   const telefone = document.getElementById('telefone').value.trim();
-  const cortesMes = Number(document.getElementById('cortesMes').value) || 2;
+  const cortes = Number(document.getElementById('cortes').value) || 2;
   const valor = Number(document.getElementById('valor').value) || 0;
-  if(!nome) return alert('Digite o nome do cliente');
-
-  clients.push({ nome, telefone, cortesFeitos:0, cortesMes, valor, pago:false });
-  salvar();
-  document.getElementById('formCliente').reset();
-  renderTable(); atualizarChart();
+  if(!nome){ alert('Digite o nome'); return; }
+  clients.push({ nome, telefone, cortesMes: cortes, cortesFeitos:0, valor, historico:[] });
+  salvar(); document.getElementById('form').reset(); listarClientes(); atualizarChart();
 }
 
-// Edit
-function editarCliente(i){
-  const c = clients[i];
-  const novo = prompt('Editar nome do cliente', c.nome);
-  if(novo === null) return;
-  clients[i].nome = novo.trim() || c.nome;
-  salvar(); renderTable(); atualizarChart();
+// render list
+function listarClientes(){
+  const q = (document.getElementById('search').value||'').toLowerCase();
+  const wrap = document.getElementById('lista'); wrap.innerHTML='';
+  if(clients.length===0){ wrap.innerHTML = '<div class="small">Nenhum cliente cadastrado.</div>'; return; }
+  clients.forEach((c,i)=>{
+    if(q && !c.nome.toLowerCase().includes(q)) return;
+    const rest = Math.max(0,c.cortesMes - c.cortesFeitos);
+    const percent = Math.round((c.cortesFeitos / c.cortesMes) * 100);
+    const div = document.createElement('div'); div.className='cliente';
+    div.innerHTML = `
+      <div class="clienteHead">
+        <div>
+          <div class="clienteName">${c.nome}</div>
+          <div class="small">${c.telefone||''}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">${c.cortesFeitos}/${c.cortesMes} cortes</div>
+          <div class="small">${formatCurrency(c.valor)}</div>
+        </div>
+      </div>
+      <div class="progressWrap"><div class="progressBar" style="width:${percent}%"></div></div>
+      <div class="actions">
+        <button onclick="registrarCorte(${i})">Registrar 1 corte</button>
+        <button class="ghost" onclick="mostrarHistorico(${i})">Histórico</button>
+        <button class="ghost" onclick="enviarCobranca(${i})">Cobrar (WhatsApp)</button>
+        <button class="ghost" onclick="renovarPlano(${i})">Renovar plano</button>
+        <button class="btnRed" onclick="excluirCliente(${i})">Excluir</button>
+      </div>
+    `;
+    wrap.appendChild(div);
+  });
 }
 
-function excluirCliente(i){ if(!confirm('Excluir cliente?')) return; clients.splice(i,1); salvar(); renderTable(); atualizarChart(); }
-
-// Registrar corte — principal ação ao cortar
+// registrar corte + avisos + historico
 function registrarCorte(i){
   const c = clients[i];
-  if(c.cortesFeitos >= c.cortesMes){ alert('Este cliente já usou todos os cortes do mês — renovar plano.'); return; }
-
-  // se antes do corte restava 2 e agora ficará 1, enviamos sugestão de agendamento
-  const restAntes = c.cortesMes - c.cortesFeitos;
-
+  if(!c) return;
+  if(c.cortesFeitos >= c.cortesMes){ alert('Plano já completo. Renove o plano.'); return; }
   c.cortesFeitos += 1;
-  salvar(); renderTable(); atualizarChart();
-
-  const restDepois = c.cortesMes - c.cortesFeitos;
-  if(restDepois === 1){ // avisar via WhatsApp com pré-visualização
+  const now = new Date().toLocaleString();
+  c.historico.unshift({ when: now, action: 'corte' });
+  salvar(); listarClientes(); atualizarChart();
+  const faltam = c.cortesMes - c.cortesFeitos;
+  if(faltam === 1){ // aviso e abrir WhatsApp com mensagem pronta
     if(c.telefone){
-      const msg = `Olá ${c.nome},%0A%0AFalta apenas 1 corte para usar todo seu plano.%0AQuer agendar?`;
-      const phone = c.telefone.replace(/[^0-9]/g,'');
-      const url = `https://web.whatsapp.com/send?phone=${phone}&text=${msg}`;
+      const msg = `Olá ${c.nome}!%0A%0AFalta apenas 1 corte do seu pacote. Quer agendar?`;
+      const url = `https://wa.me/${c.telefone}?text=${msg}`;
       window.open(url,'_blank');
+    } else {
+      alert('Falta 1 corte — mas cliente não possui telefone cadastrado.');
     }
   }
-
-  if(c.cortesFeitos >= c.cortesMes){
-    alert('Renove o plano');
-  }
+  if(faltam === 0){ alert('Plano finalizado — notifique para renovar se quiser.'); }
 }
 
-// marcar pagamento
-function togglePago(i){ clients[i].pago = !clients[i].pago; salvar(); renderTable(); }
+function renovarPlano(i){ if(!confirm('Renovar plano para '+clients[i].nome+' ?')) return; clients[i].cortesFeitos = 0; clients[i].historico.unshift({ when:new Date().toLocaleString(), action:'renovado' }); salvar(); listarClientes(); atualizarChart(); }
 
-// renovar plano (zera cortes e marca pendente)
-function renovarPlano(i){ if(!confirm('Renovar plano para '+clients[i].nome+' ?')) return; clients[i].cortesFeitos = 0; clients[i].pago = false; salvar(); renderTable(); atualizarChart(); }
+function excluirCliente(i){ if(!confirm('Excluir '+clients[i].nome+' ?')) return; clients.splice(i,1); salvar(); listarClientes(); atualizarChart(); }
 
-// cobrar via WhatsApp (pré-visualização)
-function enviarCobranca(i){
+function mostrarHistorico(i){
   const c = clients[i];
-  if(!c) return;
-  if(!c.telefone){ alert('Cliente não possui telefone cadastrado'); return; }
-  const chavePIX = 'hyagosousasous@gmail.com';
-  const texto = `Olá ${c.nome},%0A%0ASegue o lembrete do pagamento do mês:%0A💈 Valor: ${formatCurrency(c.valor)}%0A💳 PIX: ${chavePIX}%0A%0AObrigado!`;
-  const phone = c.telefone.replace(/[^0-9]/g,'');
-  const url = `https://web.whatsapp.com/send?phone=${phone}&text=${texto}`;
-  window.open(url,'_blank');
+  const area = document.getElementById('histArea'); area.style.display='block';
+  let html = `<h3>Histórico — ${c.nome}</h3>`;
+  if(!c.historico || c.historico.length===0) html += '<div class="small">Nenhum registro.</div>';
+  else html += '<ul>' + c.historico.map(h => `<li>${h.when} — ${h.action}</li>`).join('') + '</ul>';
+  html += '<div style="margin-top:8px"><button class="ghost" onclick="hideHistorico()">Fechar histórico</button></div>';
+  area.innerHTML = html; area.scrollIntoView({behavior:'smooth'});
+}
+function hideHistorico(){ document.getElementById('histArea').style.display='none'; }
+
+// cobrança via whatsapp
+function enviarCobranca(i){ const c = clients[i]; if(!c.telefone) return alert('Cliente sem telefone'); const chave='hyagosousasous@gmail.com'; const texto = `Olá ${c.nome}!%0A%0APor favor, pagamento do plano: ${formatCurrency(c.valor)}.%0APIX: ${chave}`; window.open(`https://wa.me/${c.telefone}?text=${texto}`,'_blank'); }
+
+// Resumo geral (tela rápida)
+function mostrarResumo(){ const totalClientes = clients.length; let totalRecebido=0,totalPendente=0,totalCortes=0,feitos=0; clients.forEach(c=>{ totalCortes += c.cortesMes; feitos += c.cortesFeitos; if(c.pago) totalRecebido += c.valor; else totalPendente += c.valor; }); const faltam = totalCortes - feitos; alert(`Clientes: ${totalClientes}
+Cortes feitos: ${feitos}
+Cortes restantes: ${faltam}
+Recebido: ${formatCurrency(totalRecebido)}
+Pendente: ${formatCurrency(totalPendente)}`); }
+
+// fechar mês -> salvar snapshot
+function fecharMes(){ if(!confirm('Salvar histórico do mês e resetar cortes?')) return; const key = new Date().toISOString().slice(0,7); const snapshot = clients.map(c=>({ nome:c.nome, cortesFeitos:c.cortesFeitos, cortesMes:c.cortesMes, valor:c.valor, historico:c.historico })); history[key] = { date:key, snapshot, totals: calcTotals(clients) }; salvarHist(); clients = clients.map(c=>({...c,cortesFeitos:0})); salvar(); listarClientes(); atualizarChart(); carregarMeses(); alert('Mês salvo: '+key); }
+
+function calcTotals(list){ let totalRecebido=0,totalPendente=0,cortesFeitos=0,cortesRest=0; for(const c of list){ cortesFeitos += c.cortesFeitos; cortesRest += (c.cortesMes - c.cortesFeitos); if(c.pago) totalRecebido += c.valor; else totalPendente += c.valor; } return { totalRecebido,totalPendente,cortesFeitos,cortesRest }; }
+
+// export CSV (clients)
+function exportarCSV(){ if(clients.length===0) return alert('Sem dados'); const rows=[['Nome','Telefone','CortesFeitos','CortesMes','Valor','Pago']]; clients.forEach(c=>rows.push([c.nome,c.telefone,c.cortesFeitos,c.cortesMes,c.valor,!!c.pago])); const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('
+'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='barber_clients.csv'; a.click(); URL.revokeObjectURL(url); }
+
+// export PDF resumo (uses html2canvas + jsPDF)
+async function exportarPDFResumo(){
+  // build a simple DOM fragment for the report
+  const div = document.createElement('div'); div.style.padding='10px'; div.style.fontSize='12px'; div.innerHTML = `<h2>Relatório — ${new Date().toLocaleDateString()}</h2>`;
+  clients.forEach(c => { div.innerHTML += `<div style="margin-bottom:6px"><b>${c.nome}</b> — ${c.cortesFeitos}/${c.cortesMes} cortes — ${formatCurrency(c.valor)}</div>`; });
+  document.body.appendChild(div);
+  const canvas = await html2canvas(div, { scale:2 });
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'pt', format:'a4' });
+  const imgProps = pdf.getImageProperties(imgData);
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  pdf.addImage(imgData,'PNG',0,20,pdfWidth,pdfHeight);
+  pdf.save('relatorio_barber_'+new Date().toISOString().slice(0,10)+'.pdf');
+  document.body.removeChild(div);
 }
 
-// Receber mês — marca todos como pagos
-function receberMes(){ if(!confirm('Marcar todos os clientes como PAGOS?')) return; clients = clients.map(c=>({...c,pago:true})); salvar(); renderTable(); }
+// enviar relatório completo via WhatsApp (texto resumido)
+function enviarRelatorioWhatsApp(){ if(clients.length===0) return alert('Sem clientes'); let text = `Relatório rápido — ${new Date().toLocaleDateString()}%0A%0A`; clients.forEach(c=>{ text += `${c.nome}: ${c.cortesFeitos}/${c.cortesMes} cortes — ${formatCurrency(c.valor)}%0A`; }); // open wa.me without phone -> user can pick contact via WhatsApp Web
+  const url = `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`; window.open(url,'_blank'); }
 
-// Fechar mês — salva snapshot no histórico e reseta cortes/pagamentos
-function fecharMes(){
-  if(!confirm('Fechar mês: salvar histórico e resetar cortes/pagamentos?')) return;
-  const key = new Date().toISOString().slice(0,7); // YYYY-MM
-  const snapshot = clients.map(c=>({ nome:c.nome, cortesFeitos:c.cortesFeitos, cortesMes:c.cortesMes, valor:c.valor, pago:c.pago }));
-  history[key] = { date:key, snapshot, totals: calcTotals(clients) };
-  salvarHist();
-  // reset clientes
-  clients = clients.map(c=>({...c, cortesFeitos:0, pago:false}));
-  salvar(); renderTable(); atualizarChart(); carregarMeses(); alert('Mês fechado e salvo: '+key);
-}
+// history UI helpers
+function carregarMeses(){ const sel = document.getElementById('selMes'); if(!sel) return; sel.innerHTML=''; const keys = Object.keys(history).sort().reverse(); const opt = document.createElement('option'); opt.value=''; opt.textContent='Selecionar mês'; sel.appendChild(opt); keys.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o); }); }
 
-function calcTotals(list){
-  let totalRecebido=0, totalPendente=0, cortesFeitos=0, cortesRest=0;
-  for(const c of list){ const cuts=c.cortesFeito||c.cortesFeitos; cortesFeito = cuts; cortesFeitos += cuts; cortesRest += (c.cortesMes - cuts); if(c.pago) totalRecebido += c.valor; else totalPendente += c.valor; }
-  return { totalRecebido, totalPendente, cortesFeitos, cortesRest };
-}
+function downloadHistoricoCSV(){ const sel=document.getElementById('selMes'); if(!sel) return alert('Nada a baixar'); const key=sel.value; if(!key) return alert('Selecione mês'); const h = history[key]; if(!h) return alert('Mês não encontrado'); const rows=[['Nome','CortesFeitos','CortesMes','Valor']]; h.snapshot.forEach(r=> rows.push([r.nome,r.cortesFeitos,r.cortesMes,r.valor])); const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('
+'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`barber_history_${key}.csv`; a.click(); URL.revokeObjectURL(url); }
 
-// Export CSV
-function baixarCSV(){
-  if(clients.length===0){ alert('Sem dados para exportar'); return; }
-  const rows = [['Nome','Telefone','CortesFeitos','CortesMes','Valor','Pago']];
-  clients.forEach(c=> rows.push([c.nome,c.telefone,c.cortesFeitos,c.cortesMes,c.valor,c.pago]));
-  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='barber_clients.csv'; a.click(); URL.revokeObjectURL(url);
-}
-function gerarRelatorio(){ baixarCSV(); }
-
-// Histórico UI
-function carregarMeses(){ const sel=document.getElementById('selMes'); sel.innerHTML=''; const keys=Object.keys(history).sort().reverse(); const opt=document.createElement('option'); opt.value=''; opt.textContent='Selecionar mês'; sel.appendChild(opt); for(const k of keys){ const o=document.createElement('option'); o.value=k; o.textContent=k; sel.appendChild(o); } }
-
-function mostrarHistorico(){ const key=document.getElementById('selMes').value; const area=document.getElementById('histArea'); area.innerHTML=''; if(!key) return alert('Selecione um mês'); const h=history[key]; if(!h) return area.innerText='Histórico não encontrado'; let html=`<div style="margin-bottom:8px"><b>Mês:</b> ${key}</div>`; html += '<table><thead><tr><th>Nome</th><th>CortesFeitos</th><th>CortesMes</th><th>Valor</th><th>Pago</th></tr></thead><tbody>'; h.snapshot.forEach(r=> html+=`<tr><td>${r.nome}</td><td>${r.cortesFeitos}</td><td>${r.cortesMes}</td><td>${formatCurrency(r.valor)}</td><td>${r.pago}</td></tr>`); html += '</tbody></table>'; area.innerHTML=html; }
-
-function downloadHistoricoCSV(){ const key=document.getElementById('selMes').value; if(!key) return alert('Selecione um mês'); const h=history[key]; if(!h) return alert('Histórico não encontrado'); const rows=[['Nome','CortesFeitos','CortesMes','Valor','Pago']]; h.snapshot.forEach(r=> rows.push([r.nome,r.cortesFeitos,r.cortesMes,r.valor,r.pago])); const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`barber_history_${key}.csv`; a.click(); URL.revokeObjectURL(url); }
-
-function limparHistorico(){ if(!confirm('Apagar todo o histórico?')) return; history={}; salvarHist(); carregarMeses(); document.getElementById('histArea').innerHTML=''; alert('Histórico limpo'); }
+function limparTudo(){ if(!confirm('Apagar todos os dados (clientes e histórico)?')) return; clients=[]; history={}; salvar(); salvarHist(); listarClientes(); atualizarChart(); carregarMeses(); alert('Dados apagados'); }
 
 // Chart
 let chart=null;
-function atualizarChart(){
-  const labels = clients.map(c=>c.nome);
-  const feitos = clients.map(c=>c.cortesFeitos);
-  const restantes = clients.map(c=>Math.max(0,c.cortesMes - c.cortesFeitos));
-  const ctx = document.getElementById('chartCuts').getContext('2d');
-  const data = { labels, datasets:[ { label:'Feitos', data:feitos }, { label:'Restantes', data:restantes } ] };
-  if(chart){ chart.data = data; chart.update(); } else { chart = new Chart(ctx, { type:'bar', data, options:{ responsive:true, scales:{ y:{ beginAtZero:true, precision:0 } } } }); }
-}
+function atualizarChart(){ const labels = clients.map(c=>c.nome); const feitos = clients.map(c=>c.cortesFeitos); const restantes = clients.map(c=>Math.max(0,c.cortesMes - c.cortesFeitos)); const ctx = document.getElementById('chart').getContext('2d'); const data = { labels, datasets:[ { label:'Feitos', data:feitos }, { label:'Restantes', data:restantes } ] }; if(chart){ chart.data = data; chart.update(); } else { chart = new Chart(ctx,{ type:'bar', data, options:{ responsive:true, scales:{ y:{ beginAtZero:true, precision:0 } } } }); } }
 
-// Render table
-function renderTable(){
-  const wrap = document.getElementById('tabelaWrap');
-  if(clients.length===0){ wrap.innerHTML = '<div class="small">Nenhum cliente cadastrado.</div>'; document.getElementById('totais').innerText='Recebido: R$ 0,00 • Pendente: R$ 0,00 • Cortes feitos: 0 • Restantes: 0'; return; }
-  let html = '<table><thead><tr><th>Nome</th><th>Cortes (Feitos / Mês)</th><th>Restam</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead><tbody>';
-  clients.forEach((c,i)=>{
-    const rest = c.cortesMes - c.cortesFeitos;
-    html += `<tr><td><b>${c.nome}</b><div class="small">${c.telefone||''}</div></td><td>${c.cortesFeitos} / ${c.cortesMes}</td><td>${rest}</td><td>${formatCurrency(c.valor)}</td><td>${c.pago?'<span class="success">Pago</span>':'<span class="danger">Pendente</span>'}</td><td class="actions">`;
-    html += `<button onclick="registrarCorte(${i})">Registrar Corte</button>`;
-    html += `<button onclick="renovarPlano(${i})">Renovar Plano</button>`;
-    html += `<button onclick="togglePago(${i})">Marcar/Desmarcar Pago</button>`;
-    html += `<button onclick="editarCliente(${i})">Editar</button>`;
-    html += `<button onclick="excluirCliente(${i})">Excluir</button>`;
-    html += `<button onclick="enviarCobranca(${i})">Enviar Cobrança</button>`;
-    html += `</td></tr>`;
-  });
-  html += '</tbody></table>';
-  wrap.innerHTML = html;
-
-  // totais
-  let totalRecebido=0, totalPendente=0, cortesFeitos=0, cortesRest=0;
-  for(const c of clients){ cortesFeitos += c.cortesFeitos; cortesRest += Math.max(0,c.cortesMes - c.cortesFeitos); if(c.pago) totalRecebido += c.valor; else totalPendente += c.valor; }
-  document.getElementById('totais').innerText = `Recebido: ${formatCurrency(totalRecebido)} • Pendente: ${formatCurrency(totalPendente)} • Cortes feitos: ${cortesFeitos} • Restantes: ${cortesRest}`;
-}
-
-// Init
-function init(){ renderTable(); atualizarChart(); carregarMeses(); }
-init();
+// init
+listarClientes(); atualizarChart(); carregarMeses();
 </script>
 </body>
 </html>
